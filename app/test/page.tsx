@@ -102,9 +102,28 @@ function TestContent() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('contextmenu', handleContextMenu)
       window.removeEventListener('keydown', handleKeyDown)
-      if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [hasStarted, isFinished])
+
+  // Dedicated Timer Effect
+  useEffect(() => {
+    if (hasStarted && !isFinished && timeLeft !== null) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev !== null && prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current)
+            autoSubmit("Time expired")
+            return 0
+          }
+          return prev !== null ? prev - 1 : null
+        })
+      }, 1000)
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [hasStarted, isFinished, timeLeft === null])
 
   const fetchTest = async () => {
     try {
@@ -133,19 +152,8 @@ function TestContent() {
     setIsFullscreen(true)
     setHasStarted(true)
     
-    // Start Timer
-    if (timeLeft !== null) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev !== null && prev <= 1) {
-            clearInterval(timerRef.current!)
-            autoSubmit("Time expired")
-            return 0
-          }
-          return prev !== null ? prev - 1 : null
-        })
-      }, 1000)
-    }
+    setIsFullscreen(true)
+    setHasStarted(true)
   }
 
   const autoSubmit = async (reason: string) => {
