@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #020617; /* Deep Slate Blue */
+  --color-foreground: #f8fafc;
+  
+  --color-primary: #6366f1; /* Indigo */
+  --color-primary-foreground: #ffffff;
+  
+  --color-secondary: #0f172a;
+  --color-secondary-foreground: #f8fafc;
+  
+  --color-accent: #8b5cf6; /* Violet */
+  --color-accent-foreground: #ffffff;
+  
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  
+  --color-card: #0f172a;
+  --color-card-foreground: #f8fafc;
+  
+  --radius-lg: 0.5rem; /* 8px */
+  --radius-md: 0.375rem; /* 6px */
+  --radius-sm: 0.25rem; /* 4px */
+}
+
+@layer base {
+  * {
+    @apply border-white/5 outline-none;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-lg;
+  }
+  
+  .glass-dark {
+    @apply bg-slate-900/60 backdrop-blur-md border border-white/5 shadow-xl;
+  }
+  
+  .premium-gradient {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+  
+  .btn-premium {
+    @apply inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:pointer-events-none text-white bg-primary shadow-sm;
+  }
+}
