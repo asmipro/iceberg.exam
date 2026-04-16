@@ -10,6 +10,8 @@ import Link from "next/link"
 import { exportSubmissionsToExcel } from "@/lib/excel"
 import { formatDate } from "@/lib/utils"
 import { motion } from "framer-motion"
+import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 
 export default function ResultsPage() {
   const [submissions, setSubmissions] = useState<any[]>([])
@@ -21,6 +23,11 @@ export default function ResultsPage() {
   // Selection & Deletion State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean,
+    type: 'single' | 'bulk',
+    id?: string
+  }>({ isOpen: false, type: 'single' })
 
   useEffect(() => {
     fetchResults()
@@ -32,14 +39,14 @@ export default function ResultsPage() {
       const data = await res.json()
       
       if (data.error) {
-        console.error("API Error:", data.error)
+        toast.error("Ma'lumotlarni yuklashda xatolik yuz berdi")
         setSubmissions([])
         return
       }
       
       setSubmissions(Array.isArray(data) ? data : [])
     } catch (err) {
-      console.error("Fetch Error:", err)
+      toast.error("Server bilan bog'lanishda xatolik")
       setSubmissions([])
     } finally {
       setLoading(false)
@@ -67,41 +74,45 @@ export default function ResultsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Haqiqatan ham ushbu natijani o'chirmoqchimisiz?")) return
-
-    setIsDeleting(true)
-    try {
-      const res = await fetch(`/api/admin/submissions/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        setSubmissions(prev => prev.filter(s => s.id !== id))
-        setSelectedIds(prev => prev.filter(i => i !== id))
-      }
-    } catch (err) {
-      alert("O'chirishda xatolik!")
-    } finally {
-      setIsDeleting(false)
-    }
+  const handleDeleteClick = (id: string) => {
+    setConfirmState({ isOpen: true, type: 'single', id })
   }
 
-  const handleBulkDelete = async () => {
-    if (!window.confirm(`${selectedIds.length} ta natijani o'chirmoqchimisiz?`)) return
+  const handleBulkDeleteClick = () => {
+    setConfirmState({ isOpen: true, type: 'bulk' })
+  }
 
+  const executeDelete = async () => {
     setIsDeleting(true)
     try {
-      const res = await fetch("/api/admin/submissions", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds })
-      })
-      if (res.ok) {
-        setSubmissions(prev => prev.filter(s => !selectedIds.includes(s.id)))
-        setSelectedIds([])
+      if (confirmState.type === 'single' && confirmState.id) {
+        const res = await fetch(`/api/admin/submissions/${confirmState.id}`, { method: "DELETE" })
+        if (res.ok) {
+          setSubmissions(prev => prev.filter(s => s.id !== confirmState.id))
+          setSelectedIds(prev => prev.filter(i => i !== confirmState.id))
+          toast.success("Natija muvaffaqiyatli o'chirildi")
+        } else {
+          toast.error("O'chirishda xatolik yuz berdi")
+        }
+      } else if (confirmState.type === 'bulk') {
+        const res = await fetch("/api/admin/submissions", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: selectedIds })
+        })
+        if (res.ok) {
+          setSubmissions(prev => prev.filter(s => !selectedIds.includes(s.id)))
+          setSelectedIds([])
+          toast.success("Tanlangan natijalar o'chirildi")
+        } else {
+          toast.error("Ommaviy o'chirishda xatolik yuz berdi")
+        }
       }
     } catch (err) {
-      alert("Ommaviy o'chirishda xatolik!")
+      toast.error("Tizimda kutilmagan xatolik")
     } finally {
       setIsDeleting(false)
+      setConfirmState({ isOpen: false, type: 'single' })
     }
   }
 
@@ -122,7 +133,7 @@ export default function ResultsPage() {
             <motion.button 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              onClick={handleBulkDelete}
+              onClick={handleBulkDeleteClick}
               disabled={isDeleting}
               className="px-6 py-4 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-rose-500/20 transition-all disabled:opacity-50"
             >
@@ -281,7 +292,7 @@ export default function ResultsPage() {
                             <span>Batafsil</span>
                           </Link>
                           <button 
-                            onClick={() => handleDelete(sub.id)}
+                            onClick={() => handleDeleteClick(sub.id)}
                             disabled={isDeleting}
                             className="p-2 text-rose-500/40 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
                           >
@@ -306,6 +317,21 @@ export default function ResultsPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog 
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState({ ...confirmState, isOpen: false })}
+        onConfirm={executeDelete}
+        loading={isDeleting}
+        title={confirmState.type === 'bulk' ? "Ommaviy o'chirish" : "Natijani o'chirish"}
+        message={confirmState.type === 'bulk' 
+          ? `Haqiqatan ham ${selectedIds.length} ta tanlangan natijani o'chirmoqchimisiz?` 
+          : "Ushbu natijani o'chirishni tasdiqlaysizmi?"
+        }
+        variant="danger"
+        confirmText="Ha, o'chirilsin"
+      />
     </div>
   )
 }

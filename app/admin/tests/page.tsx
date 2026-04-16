@@ -4,10 +4,17 @@ import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit3, Loader2, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 
 export default function AdminTestsPage() {
   const [tests, setTests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, id: string | null}>({
+    isOpen: false,
+    id: null
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
   
   useEffect(() => {
     fetchTests()
@@ -19,19 +26,32 @@ export default function AdminTestsPage() {
       const data = await res.json()
       setTests(data)
     } catch (err) {
-      console.error(err)
+      toast.error("Testlarni yuklashda xatolik yuz berdi")
     } finally {
       setLoading(false)
     }
   }
 
-  const deleteTest = async (id: string) => {
-    if (!confirm("Haqiqatan ham o'chirmoqchimisiz? Bunga tegishli barcha natijalar ham o'chib ketadi!")) return
+  const handleDeleteClick = (id: string) => {
+    setDeleteModal({ isOpen: true, id })
+  }
+
+  const executeDelete = async () => {
+    if (!deleteModal.id) return
+    setIsDeleting(true)
     try {
-      await fetch(`/api/admin/tests/${id}`, { method: "DELETE" })
-      fetchTests()
+      const res = await fetch(`/api/admin/tests/${deleteModal.id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("Test o'chirildi")
+        fetchTests()
+      } else {
+        toast.error("O'chirishda xatolik!")
+      }
     } catch (err) {
-      alert("Xatolik!")
+      toast.error("Xatolik yuz berdi")
+    } finally {
+      setIsDeleting(false)
+      setDeleteModal({ isOpen: false, id: null })
     }
   }
 
@@ -62,7 +82,7 @@ export default function AdminTestsPage() {
                   {test.role === "STUDENT" ? `O'Q • ${test.level}` : "USTOZ"}
                 </span>
                 <button 
-                  onClick={() => deleteTest(test.id)}
+                  onClick={() => handleDeleteClick(test.id)}
                   className="w-8 h-8 bg-black/40 text-slate-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -100,6 +120,18 @@ export default function AdminTestsPage() {
           )}
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog 
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={executeDelete}
+        loading={isDeleting}
+        title="Testni o'chirish"
+        message="Haqiqatan ham ushbu testni o'chirmoqchimisiz? Ushbu amaldan so'ng ushbu testga tegishli barcha topshirilgan natijalar ham o'chib ketadi!"
+        variant="danger"
+        confirmText="Ha, o'chirilsin"
+      />
     </div>
   )
 }

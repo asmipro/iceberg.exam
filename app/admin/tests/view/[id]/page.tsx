@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, Loader2, Award, BookOpen, Clock, CheckCircle2 } from "lucide-react"
 import { motion } from "framer-motion"
+import { toast } from "sonner"
 
 export default function ViewTestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -22,7 +23,7 @@ export default function ViewTestPage({ params }: { params: Promise<{ id: string 
       const data = await res.json()
       setTest(data)
     } catch (err) {
-      alert("Testni yuklashda xatolik!")
+      toast.error("Testni yuklashda xatolik yuz berdi!")
       router.push("/admin/tests")
     } finally {
       setLoading(false)

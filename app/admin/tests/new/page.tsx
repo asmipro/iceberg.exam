@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2, Image as ImageIcon, CheckCircle2, ChevronLeft, Loader2, Clock } from "lucide-react"
 import { motion } from "framer-motion"
+import { toast } from "sonner"
 
 export default function NewTestPage() {
   const router = useRouter()
@@ -41,7 +42,10 @@ export default function NewTestPage() {
   }
 
   const removeQuestion = (idx: number) => {
-    if (newTest.questions.length <= 1) return alert("Kamida bitta savol bo'lishi kerak!")
+    if (newTest.questions.length <= 1) {
+      toast.warning("Kamida bitta savol bo'lishi kerak!")
+      return
+    }
     setNewTest({
       ...newTest,
       questions: newTest.questions.filter((_, i) => i !== idx)
@@ -68,7 +72,7 @@ export default function NewTestPage() {
         const data = await res.json()
         if (data.url) updateQuestion(idx, { imageUrl: data.url })
       } catch (err) {
-        alert("Rasm yuklashda xatolik!")
+        toast.error("Rasm yuklashda xatolik yuz berdi!")
       } finally {
         setUploadingIdx(null)
       }
@@ -76,7 +80,10 @@ export default function NewTestPage() {
   }
 
   const handleCreateTest = async () => {
-    if (!newTest.title) return alert("Sarlavhani kiriting!")
+    if (!newTest.title) {
+      toast.warning("Test sarlavhasini kiriting!")
+      return
+    }
     setLoading(true)
     const submissionData = {
       ...newTest,
@@ -88,9 +95,12 @@ export default function NewTestPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submissionData),
       })
-      if (res.ok) router.push("/admin/tests")
+      if (res.ok) {
+        toast.success("Test muvaffaqiyatli yaratildi")
+        router.push("/admin/tests")
+      }
     } catch (err) {
-      alert("Xatolik!")
+      toast.error("Testni saqlashda xatolik yuz berdi!")
     } finally {
       setLoading(false)
     }

@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Trash2, Image as ImageIcon, CheckCircle2, ChevronLeft, Loader2, Save, Clock } from "lucide-react"
 import { motion } from "framer-motion"
+import { toast } from "sonner"
 
 export default function EditTestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -37,7 +38,7 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
         questions: data.questions || []
       })
     } catch (err) {
-      alert("Testni yuklashda xatolik!")
+      toast.error("Testni yuklashda xatolik yuz berdi!")
       router.push("/admin/tests")
     } finally {
       setLoading(false)
@@ -65,7 +66,10 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
   }
 
   const removeQuestion = (idx: number) => {
-    if (test.questions.length <= 1) return alert("Kamida bitta savol bo'lishi kerak!")
+    if (test.questions.length <= 1) {
+      toast.warning("Kamida bitta savol bo'lishi kerak!")
+      return
+    }
     setTest({
       ...test,
       questions: test.questions.filter((_, i) => i !== idx)
@@ -92,7 +96,7 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
         const data = await res.json()
         if (data.url) updateQuestion(idx, { imageUrl: data.url })
       } catch (err) {
-        alert("Rasm yuklashda xatolik!")
+        toast.error("Rasm yuklashda xatolik yuz berdi!")
       } finally {
         setUploadingIdx(null)
       }
@@ -100,7 +104,10 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleUpdateTest = async () => {
-    if (!test.title) return alert("Sarlavhani kiriting!")
+    if (!test.title) {
+      toast.warning("Test sarlavhasini kiriting!")
+      return
+    }
     setSaving(true)
     const submissionData = {
       ...test,
@@ -112,9 +119,12 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submissionData),
       })
-      if (res.ok) router.push("/admin/tests")
+      if (res.ok) {
+        toast.success("O'zgarishlar saqlandi")
+        router.push("/admin/tests")
+      }
     } catch (err) {
-      alert("Saqlashda xatolik!")
+      toast.error("Saqlashda xatolik yuz berdi!")
     } finally {
       setSaving(false)
     }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="uz">
       <body className={`${inter.variable} ${outfit.variable} font-inter antialiased`}>
         <Providers>
+          <Toaster position="top-right" richColors theme="dark" />
           <main className="min-h-screen relative overflow-hidden">
             {/* Background Decorative Elements */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />

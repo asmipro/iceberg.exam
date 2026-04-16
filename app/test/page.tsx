@@ -7,6 +7,8 @@ import {
   CheckCircle2, ChevronRight, ChevronLeft, Loader2, 
   Clock, Award, LogOut, AlertTriangle, Maximize2 
 } from "lucide-react"
+import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 
 import { Suspense } from "react"
 
@@ -30,6 +32,7 @@ function TestContent() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isExitModalOpen, setIsExitModalOpen] = useState(false)
   
   const MAX_TAB_SWITCHES = 3
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -230,7 +233,7 @@ function TestContent() {
       console.error("Submission error:", err)
       setIsSubmitting(false)
       isSubmittingRef.current = false
-      alert("Natijani saqlashda xatolik!")
+      toast.error("Natijani saqlashda xatolik yuz berdi!")
     } finally {
       setLoading(false)
     }
@@ -508,9 +511,7 @@ function TestContent() {
 
                  <div className="border-t border-white/5 pt-8">
                     <button 
-                      onClick={() => {
-                        if(confirm("Haqiqatan ham chiqib ketmoqchimisiz? Javoblar saqlanmaydi!")) router.push("/")
-                      }}
+                      onClick={() => setIsExitModalOpen(true)}
                       className="w-full flex items-center justify-center gap-3 py-4 text-rose-500/40 hover:text-rose-500 text-[10px] font-black uppercase tracking-[0.3em] transition-all bg-rose-500/5 hover:bg-rose-500/10 rounded-xl"
                     >
                       <LogOut className="w-4 h-4" /> Chiqish
@@ -535,6 +536,16 @@ function TestContent() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog 
+        isOpen={isExitModalOpen}
+        onClose={() => setIsExitModalOpen(false)}
+        onConfirm={() => router.push("/")}
+        title="Testdan chiqish"
+        message="Haqiqatan ham chiqib ketmoqchimisiz? Barcha saqlanmagan javoblar yo'qolishi mumkin!"
+        variant="danger"
+        confirmText="Ha, chiqaman"
+      />
     </div>
   )
 }
