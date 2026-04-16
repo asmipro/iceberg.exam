@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BarChart3, Download, Search, User, Calendar, Award, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
+import { 
+  BarChart3, Download, Search, User, Calendar, Award, 
+  ExternalLink, ChevronLeft, ChevronRight, Trash2, 
+  CheckSquare, Square, Check, AlertCircle, Loader2
+} from "lucide-react"
 import Link from "next/link"
 import { exportSubmissionsToExcel } from "@/lib/excel"
 import { formatDate } from "@/lib/utils"
@@ -13,6 +17,10 @@ export default function ResultsPage() {
   const [filter, setFilter] = useState("STUDENT")
   const [selectedLevel, setSelectedLevel] = useState("ALL")
   const [search, setSearch] = useState("")
+  
+  // Selection & Deletion State
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchResults()
@@ -45,6 +53,58 @@ export default function ResultsPage() {
     return s.role === filter && searchMatch && levelMatch
   })
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredSubmissions.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(filteredSubmissions.map(s => s.id))
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Haqiqatan ham ushbu natijani o'chirmoqchimisiz?")) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        setSubmissions(prev => prev.filter(s => s.id !== id))
+        setSelectedIds(prev => prev.filter(i => i !== id))
+      }
+    } catch (err) {
+      alert("O'chirishda xatolik!")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`${selectedIds.length} ta natijani o'chirmoqchimisiz?`)) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch("/api/admin/submissions", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds })
+      })
+      if (res.ok) {
+        setSubmissions(prev => prev.filter(s => !selectedIds.includes(s.id)))
+        setSelectedIds([])
+      }
+    } catch (err) {
+      alert("Ommaviy o'chirishda xatolik!")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const handleExport = () => {
     exportSubmissionsToExcel(filteredSubmissions, filter, selectedLevel)
   }
@@ -57,26 +117,40 @@ export default function ResultsPage() {
           <h1 className="text-4xl font-black font-outfit mb-2">Imtihon Natijalari</h1>
           <p className="text-muted-foreground text-lg">Barcha topshirilgan testlar va statistikalar</p>
         </div>
-        <button 
-          onClick={handleExport}
-          className="btn-premium px-8 py-4 font-bold flex items-center gap-2"
-        >
-          <Download className="w-5 h-5" />
-          Excelga yuklash (.xlsx)
-        </button>
+        <div className="flex flex-wrap gap-4">
+          {selectedIds.length > 0 && (
+            <motion.button 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="px-6 py-4 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-rose-500/20 transition-all disabled:opacity-50"
+            >
+              {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+              Tanlanganlarni o'chirish ({selectedIds.length})
+            </motion.button>
+          )}
+          <button 
+            onClick={handleExport}
+            className="btn-premium px-8 py-4 font-bold flex items-center gap-2"
+          >
+            <Download className="w-5 h-5" />
+            Excelga yuklash (.xlsx)
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}
       <div className="flex flex-col md:flex-row gap-4 items-center bg-slate-900/40 p-4 rounded-lg border border-white/5">
         <div className="flex bg-slate-950 p-1 rounded-lg border border-white/5">
           <button 
-            onClick={() => { setFilter("STUDENT"); setSelectedLevel("ALL"); }}
+            onClick={() => { setFilter("STUDENT"); setSelectedLevel("ALL"); setSelectedIds([]); }}
             className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${filter === "STUDENT" ? "bg-primary text-white shadow-sm" : "text-muted-foreground"}`}
           >
             Talabalar
           </button>
           <button 
-            onClick={() => { setFilter("TEACHER"); setSelectedLevel("ALL"); }}
+            onClick={() => { setFilter("TEACHER"); setSelectedLevel("ALL"); setSelectedIds([]); }}
             className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${filter === "TEACHER" ? "bg-primary text-white shadow-sm" : "text-muted-foreground"}`}
           >
             O'qituvchilar
@@ -86,7 +160,7 @@ export default function ResultsPage() {
         {filter === "STUDENT" && (
           <select 
             value={selectedLevel}
-            onChange={(e) => setSelectedLevel(e.target.value)}
+            onChange={(e) => { setSelectedLevel(e.target.value); setSelectedIds([]); }}
             className="bg-slate-950 border border-white/5 rounded-lg py-2.5 px-4 text-sm font-bold focus:border-primary outline-none text-white/80"
           >
             <option value="ALL">Barcha Etaplar</option>
@@ -102,7 +176,7 @@ export default function ResultsPage() {
             type="text" 
             placeholder="Ism yoki familiya bo'yicha qidirish..." 
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setSelectedIds([]); }}
             className="w-full bg-slate-950 border border-white/5 rounded-lg py-3 pl-12 pr-4 focus:border-primary outline-none transition-all"
           />
         </div>
@@ -125,6 +199,15 @@ export default function ResultsPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-950/50 border-b border-white/5">
+                  <th className="px-6 py-5 w-10">
+                    <button onClick={toggleSelectAll} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+                      {selectedIds.length === filteredSubmissions.length ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                  </th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Talaba</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Test Nomi</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Bosqich</th>
@@ -138,6 +221,7 @@ export default function ResultsPage() {
                   const percentage = sub.totalQuestions > 0 ? Math.round((sub.score / sub.totalQuestions) * 100) : 0;
                   const statusColor = percentage >= 80 ? 'text-emerald-400' : percentage >= 50 ? 'text-amber-400' : 'text-rose-400';
                   const statusBg = percentage >= 80 ? 'bg-emerald-500/10 border-emerald-500/20' : percentage >= 50 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-rose-500/10 border-rose-500/20';
+                  const isSelected = selectedIds.includes(sub.id)
                   
                   return (
                     <motion.tr 
@@ -145,8 +229,13 @@ export default function ResultsPage() {
                       animate={{ opacity: 1 }}
                       transition={{ delay: idx * 0.01 }}
                       key={sub.id}
-                      className="group hover:bg-white/[0.02] transition-colors"
+                      className={`group hover:bg-white/[0.02] transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                     >
+                      <td className="px-6 py-4">
+                        <button onClick={() => toggleSelect(sub.id)} className={`w-5 h-5 flex items-center justify-center transition-colors ${isSelected ? 'text-primary' : 'text-slate-800 hover:text-slate-600'}`}>
+                          {isSelected ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                        </button>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-black">
@@ -183,13 +272,22 @@ export default function ResultsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link 
-                          href={`/admin/results/${sub.id}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-primary transition-all rounded-lg border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          <span>Batafsil</span>
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link 
+                            href={`/admin/results/${sub.id}`}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 transition-all rounded-lg border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Batafsil</span>
+                          </Link>
+                          <button 
+                            onClick={() => handleDelete(sub.id)}
+                            disabled={isDeleting}
+                            className="p-2 text-rose-500/40 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </motion.tr>
                   );
@@ -200,7 +298,7 @@ export default function ResultsPage() {
           
           {/* Mobile footer info */}
           <div className="p-4 bg-slate-950/30 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
-            <span>Jami: {filteredSubmissions.length} natija</span>
+            <span>Jami: {filteredSubmissions.length} natija {selectedIds.length > 0 && `(${selectedIds.length} tasi tanlangan)`}</span>
             <div className="flex gap-2">
               <button className="p-2 hover:text-primary transition-colors disabled:opacity-20" disabled><ChevronLeft className="w-4 h-4" /></button>
               <button className="p-2 hover:text-primary transition-colors disabled:opacity-20" disabled><ChevronRight className="w-4 h-4" /></button>

@@ -29,3 +29,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Ma'lumotlarni yuklashda xatolik" }, { status: 500 })
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  // Check auth
+  const session = await auth()
+  if (!session) {
+    return NextResponse.json({ error: "Ruxsat berilmagan" }, { status: 401 })
+  }
+
+  try {
+    const { ids } = await req.json()
+    
+    if (!ids || !Array.isArray(ids)) {
+      return NextResponse.json({ error: "ID-lar ro'yxati topilmadi" }, { status: 400 })
+    }
+
+    await prisma.submission.deleteMany({
+      where: {
+        id: { in: ids }
+      }
+    })
+
+    return NextResponse.json({ message: "Tanlangan natijalar o'chirildi" })
+  } catch (error) {
+    console.error("Bulk delete error:", error)
+    return NextResponse.json({ error: "Natijalarni o'chirishda xatolik" }, { status: 500 })
+  }
+}

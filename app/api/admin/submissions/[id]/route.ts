@@ -28,3 +28,20 @@ export async function GET(
     return NextResponse.json({ error: "Tanlangan natijani yuklashda xatolik" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    await prisma.submission.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({ message: "Natija o'chirildi" })
+  } catch (error) {
+    console.error("Submission delete error:", error)
+    return NextResponse.json({ error: "Natijani o'chirishda xatolik" }, { status: 500 })
+  }
+}
