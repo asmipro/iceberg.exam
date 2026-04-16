@@ -13,6 +13,13 @@ import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 
+const TEACHER_LEVELS = [
+  "Support teacher",
+  "Kids teacher",
+  "1-2-3 level teachers",
+  "4-5-6 level teachers"
+]
+
 export default function ResultsPage() {
   const [submissions, setSubmissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -168,18 +175,22 @@ export default function ResultsPage() {
           </button>
         </div>
 
-        {filter === "STUDENT" && (
-          <select 
-            value={selectedLevel}
-            onChange={(e) => { setSelectedLevel(e.target.value); setSelectedIds([]); }}
-            className="bg-slate-950 border border-white/5 rounded-lg py-2.5 px-4 text-sm font-bold focus:border-primary outline-none text-white/80"
-          >
-            <option value="ALL">Barcha Etaplar</option>
-            {[1, 2, 3, 4, 5, 6].map(num => (
+        <select 
+          value={selectedLevel}
+          onChange={(e) => { setSelectedLevel(e.target.value); setSelectedIds([]); }}
+          className="bg-slate-950 border border-white/5 rounded-lg py-2.5 px-4 text-sm font-bold focus:border-primary outline-none text-white/80"
+        >
+          <option value="ALL">Barcha {filter === "STUDENT" ? "Etaplar" : "Darajalar"}</option>
+          {filter === "STUDENT" ? (
+            [1, 2, 3, 4, 5, 6].map(num => (
               <option key={num} value={`${num}-etap`}>{num}-etap</option>
-            ))}
-          </select>
-        )}
+            ))
+          ) : (
+            TEACHER_LEVELS.map(level => (
+              <option key={level} value={level}>{level}</option>
+            ))
+          )}
+        </select>
         
         <div className="relative flex-grow">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -205,11 +216,11 @@ export default function ResultsPage() {
           <p className="text-sm opacity-50 mt-1">Siz tanlagan filtr yoki qidiruv bo'yicha ma'lumot yo'q</p>
         </div>
       ) : (
-        <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
+          <div className="overflow-x-auto overflow-y-auto max-h-[650px] custom-scrollbar">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-950/50 border-b border-white/5">
+              <thead className="sticky top-0 z-10 bg-[#070b14]">
+                <tr className="border-b border-white/5">
                   <th className="px-6 py-5 w-10">
                     <button onClick={toggleSelectAll} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
                       {selectedIds.length === filteredSubmissions.length ? (

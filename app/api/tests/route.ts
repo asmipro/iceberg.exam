@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const tests = await prisma.test.findMany({
       where: {
         role,
-        level: role === "STUDENT" ? level : undefined,
+        level: level || undefined,
       },
       include: {
         questions: true,

@@ -6,6 +6,13 @@ import { Plus, Trash2, Image as ImageIcon, CheckCircle2, ChevronLeft, Loader2, C
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 
+const TEACHER_LEVELS = [
+  "Support teacher",
+  "Kids teacher",
+  "1-2-3 level teachers",
+  "4-5-6 level teachers"
+]
+
 export default function NewTestPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -86,8 +93,7 @@ export default function NewTestPage() {
     }
     setLoading(true)
     const submissionData = {
-      ...newTest,
-      level: newTest.role === "TEACHER" ? "Staff" : newTest.level
+      ...newTest
     }
     try {
       const res = await fetch("/api/admin/tests", {
@@ -150,7 +156,11 @@ export default function NewTestPage() {
                   {["STUDENT", "TEACHER"].map((role) => (
                     <button
                       key={role}
-                      onClick={() => setNewTest({ ...newTest, role: role as any })}
+                      onClick={() => setNewTest({ 
+                        ...newTest, 
+                        role: role as any, 
+                        level: role === "STUDENT" ? "1-etap" : "Support teacher" 
+                      })}
                       className={`flex-grow py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${newTest.role === role ? 'bg-primary text-white' : 'text-muted-foreground hover:text-white'}`}
                     >
                       {role === "STUDENT" ? "O'quvchilar" : "Ustozlar"}
@@ -159,7 +169,7 @@ export default function NewTestPage() {
                </div>
             </div>
             
-            {newTest.role === "STUDENT" && (
+            {newTest.role === "STUDENT" ? (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Bosqich (Etap)</label>
                  <div className="grid grid-cols-3 gap-2">
@@ -170,6 +180,21 @@ export default function NewTestPage() {
                         className={`py-2.5 rounded-lg text-[10px] font-black transition-all border ${newTest.level === `${i}-etap` ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-white/5 text-muted-foreground'}`}
                       >
                         {i}-etap
+                      </button>
+                    ))}
+                 </div>
+              </motion.div>
+            ) : (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">O'qituvchi Darajasi</label>
+                 <div className="grid grid-cols-2 gap-2">
+                    {TEACHER_LEVELS.map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => setNewTest({ ...newTest, level })}
+                        className={`py-2.5 px-3 text-left leading-tight rounded-lg text-[10px] font-black transition-all border ${newTest.level === level ? 'bg-primary/20 border-primary text-primary' : 'bg-slate-950 border-white/5 text-muted-foreground'}`}
+                      >
+                        {level}
                       </button>
                     ))}
                  </div>

@@ -188,9 +188,9 @@ function TestContent() {
       const existing = newAnswers.findIndex(a => a.questionId === currentQuestion.id)
       
       if (existing > -1) {
-        newAnswers[existing] = { questionId: currentQuestion.id, answer: text, isCorrect: false }
+        newAnswers[existing] = { questionId: currentQuestion.id, answer: text, isCorrect: null }
       } else {
-        newAnswers.push({ questionId: currentQuestion.id, answer: text, isCorrect: false })
+        newAnswers.push({ questionId: currentQuestion.id, answer: text, isCorrect: null })
       }
       return newAnswers
     })
@@ -408,7 +408,7 @@ function TestContent() {
 
                 <div className="mb-8">
                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-500 block mb-4">Savol matni:</span>
-                   <h1 className="text-xl md:text-3xl font-black font-outfit leading-tight text-white">{currentQuestion.text}</h1>
+                   <h1 className="text-lg md:text-2xl font-black font-outfit leading-tight text-slate-200">{currentQuestion.text}</h1>
                 </div>
 
                 {currentQuestion.imageUrl && (
@@ -497,7 +497,7 @@ function TestContent() {
                         <button
                           key={i}
                           onClick={() => setCurrentIdx(i)}
-                          className={`w-full aspect-square rounded-xl flex items-center justify-center text-xs font-black border transition-all ${
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black border transition-all ${
                             currentIdx === i ? 'bg-primary border-primary text-white shadow-xl shadow-primary/30' :
                             answers.some(a => a.questionId === test.questions[i].id) ? 'bg-primary/20 border-primary/30 text-primary' :
                             'bg-slate-950 border-white/5 text-slate-700 hover:border-white/10'

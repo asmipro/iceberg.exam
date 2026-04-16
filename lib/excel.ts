@@ -39,7 +39,11 @@ export async function exportSubmissionsToExcel(submissions: any[], role: string,
       
       const userAnswer = ans.answer !== undefined && ans.answer !== null ? ans.answer : "(Javob berilmagan)"
       const isCorrect = ans.isCorrect
-      const status = isCorrect ? "✅ (To'g'ri)" : `❌ (Xato) [Aslida: ${cAnswer}]`
+      
+      let status = ""
+      if (isCorrect === true) status = "✅ (To'g'ri)"
+      else if (isCorrect === false) status = `❌ (Xato) [Aslida: ${cAnswer}]`
+      else status = "(Ochiq savol - Tekshirilmaydi)"
       
       return `${idx + 1}. ${qText}\n   ↳ Javob: ${userAnswer} ${status}`
     }).join('\n\n') : ""

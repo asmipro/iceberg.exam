@@ -17,16 +17,30 @@ export async function POST(req: NextRequest) {
     }
 
     let score = 0
+    let mcqCount = 0
     const processedAnswers = test.questions.map((q) => {
       const userAnswer = answers.find((a: any) => a.questionId === q.id)?.answer
-      const isCorrect = userAnswer === q.correctAnswer
-      if (isCorrect) score++
-      return {
-        questionId: q.id,
-        questionText: q.text,
-        correctAnswer: q.correctAnswer,
-        answer: userAnswer,
-        isCorrect,
+      
+      if (q.type === "MCQ") {
+        mcqCount++
+        const isCorrect = userAnswer === q.correctAnswer
+        if (isCorrect) score++
+        return {
+          questionId: q.id,
+          questionText: q.text,
+          correctAnswer: q.correctAnswer,
+          answer: userAnswer,
+          isCorrect,
+        }
+      } else {
+        // OPEN questions are not checked and don't affect the score
+        return {
+          questionId: q.id,
+          questionText: q.text,
+          correctAnswer: null,
+          answer: userAnswer,
+          isCorrect: null,
+        }
       }
     })
 
@@ -39,7 +53,7 @@ export async function POST(req: NextRequest) {
         level,
         answers: processedAnswers,
         score,
-        totalQuestions: test.questions.length,
+        totalQuestions: mcqCount,
       },
     })
 

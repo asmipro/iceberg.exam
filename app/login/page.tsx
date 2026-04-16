@@ -1,33 +1,50 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { User, Layers, ArrowRight, Loader2, AlertCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
-export default function LoginPage() {
+const TEACHER_LEVELS = [
+  "Support teacher",
+  "Kids teacher",
+  "1-2-3 level teachers",
+  "4-5-6 level teachers"
+]
+
+function LoginContent() {
   const router = useRouter()
-  const [role, setRole] = useState<"STUDENT" | "TEACHER">("STUDENT")
+  const searchParams = useSearchParams()
+  
+  // Get role from URL, default to STUDENT
+  const urlRole = searchParams.get("role")?.toUpperCase() === "TEACHER" ? "TEACHER" : "STUDENT"
+  
+  const [role, setRole] = useState<"STUDENT" | "TEACHER">(urlRole)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [level, setLevel] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Sync state with URL if it changes
+  useEffect(() => {
+    setRole(urlRole)
+    setLevel("")
+  }, [urlRole])
+
   const handleStart = async () => {
-    if (!firstName || !lastName || (role === "STUDENT" && !level)) {
+    if (!firstName || !lastName || !level) {
       setError("Iltimos, barcha maydonlarni to'ldiring!")
       return
     }
     
     setLoading(true)
-    const finalLevel = role === "STUDENT" ? level : "Staff"
-    const userInfo = { firstName, lastName, role, level: finalLevel }
+    const userInfo = { firstName, lastName, role, level }
     sessionStorage.setItem("ice_user", JSON.stringify(userInfo))
     
     // Simulating a small delay for better UX
     setTimeout(() => {
-      router.push(`/test?role=${role}&level=${finalLevel}`)
+      router.push(`/test?role=${role}&level=${level}`)
     }, 500)
   }
 
@@ -45,7 +62,10 @@ export default function LoginPage() {
             <div className="flex justify-center mb-2">
               <img src="/Frame 344.png" alt="ICE Logo" className="h-12 w-auto" />
             </div>
-            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.3em] mt-3">Ma'lumotlaringizni kiriting</p>
+            <h1 className="text-xl font-black font-outfit mt-4">
+              {role === "STUDENT" ? "O'quvchi Logini" : "Ustoz Logini"}
+            </h1>
+            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Ma'lumotlaringizni kiriting</p>
           </div>
 
           <div className="space-y-6">
@@ -62,24 +82,9 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
-            <div className="space-y-2">
-              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Kimsiz?</label>
-              <div className="flex bg-slate-950 p-1 rounded-lg border border-white/5">
-                {["STUDENT", "TEACHER"].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => { setRole(r as any); setError("") }}
-                    className={`flex-grow py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${role === r ? 'bg-primary text-white shadow-md' : 'text-muted-foreground hover:text-white'}`}
-                  >
-                    {r === "STUDENT" ? "O'quvchi" : "Ustoz"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 text-left block">Ismdagi harf</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 text-left block">Ism</label>
                 <input 
                   type="text" 
                   value={firstName}
@@ -100,11 +105,14 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {role === "STUDENT" && (
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Guruh (Etap)</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3, 4, 5, 6].map((l) => (
+            <div className="space-y-3">
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                {role === "STUDENT" ? "Guruh (Etap)" : "Mutaxassislik (Daraja)"}
+              </label>
+              
+              <div className={`grid ${role === "STUDENT" ? "grid-cols-3" : "grid-cols-2"} gap-2`}>
+                {role === "STUDENT" ? (
+                  [1, 2, 3, 4, 5, 6].map((l) => (
                     <button
                       key={l}
                       onClick={() => setLevel(`${l}-etap`)}
@@ -112,10 +120,20 @@ export default function LoginPage() {
                     >
                       {l}-etap
                     </button>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  TEACHER_LEVELS.map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => setLevel(l)}
+                      className={`py-3 px-4 rounded-lg text-[10px] font-black transition-all border text-left leading-tight ${level === l ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400 font-black' : 'bg-slate-950 border-white/5 text-muted-foreground font-bold'}`}
+                    >
+                      {l}
+                    </button>
+                  ))
+                )}
               </div>
-            )}
+            </div>
 
             <button 
               onClick={handleStart}
@@ -124,9 +142,27 @@ export default function LoginPage() {
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Boshlash <ArrowRight className="w-4 h-4" /></>}
             </button>
+            <button 
+              onClick={() => router.push('/')}
+              className="w-full py-2 text-[9px] text-muted-foreground hover:text-white uppercase tracking-widest transition-colors"
+            >
+              ← Boshqa role tanlash
+            </button>
           </div>
         </div>
       </motion.div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

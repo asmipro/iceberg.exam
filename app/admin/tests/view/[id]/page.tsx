@@ -52,7 +52,7 @@ export default function ViewTestPage({ params }: { params: Promise<{ id: string 
           <div className="flex-grow">
             <div className="flex items-center gap-3 mb-1">
               <span className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md text-[10px] font-black uppercase tracking-wider">
-                {test.role === "STUDENT" ? test.level : "Staff"}
+                {test.level}
               </span>
               <h1 className="text-2xl font-black font-outfit uppercase tracking-tight">{test.title}</h1>
             </div>

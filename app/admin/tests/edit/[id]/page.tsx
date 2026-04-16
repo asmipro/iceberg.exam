@@ -6,6 +6,13 @@ import { Plus, Trash2, Image as ImageIcon, CheckCircle2, ChevronLeft, Loader2, S
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 
+const TEACHER_LEVELS = [
+  "Support teacher",
+  "Kids teacher",
+  "1-2-3 level teachers",
+  "4-5-6 level teachers"
+]
+
 export default function EditTestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
@@ -110,8 +117,7 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
     }
     setSaving(true)
     const submissionData = {
-      ...test,
-      level: test.role === "TEACHER" ? "Staff" : test.level
+      ...test
     }
     try {
       const res = await fetch(`/api/admin/tests/${id}`, {
@@ -180,7 +186,11 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
                   {["STUDENT", "TEACHER"].map((role) => (
                     <button
                       key={role}
-                      onClick={() => setTest({ ...test, role: role as any })}
+                      onClick={() => setTest({ 
+                        ...test, 
+                        role: role as any,
+                        level: role === "STUDENT" ? "1-etap" : "Support teacher"
+                      })}
                       className={`flex-grow py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${test.role === role ? 'bg-primary text-white' : 'text-muted-foreground hover:text-white'}`}
                     >
                       {role === "STUDENT" ? "O'quvchilar" : "Ustozlar"}
@@ -189,7 +199,7 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
                </div>
             </div>
             
-            {test.role === "STUDENT" && (
+            {test.role === "STUDENT" ? (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Bosqich (Etap)</label>
                  <div className="grid grid-cols-3 gap-2">
@@ -200,6 +210,21 @@ export default function EditTestPage({ params }: { params: Promise<{ id: string 
                         className={`py-2.5 rounded-lg text-[10px] font-black transition-all border ${test.level === `${i}-etap` ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400' : 'bg-slate-950 border-white/5 text-muted-foreground'}`}
                       >
                         {i}-etap
+                      </button>
+                    ))}
+                 </div>
+              </motion.div>
+            ) : (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">O'qituvchi Darajasi</label>
+                 <div className="grid grid-cols-2 gap-2">
+                    {TEACHER_LEVELS.map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => setTest({ ...test, level })}
+                        className={`py-2.5 px-3 text-left leading-tight rounded-lg text-[10px] font-black transition-all border ${test.level === level ? 'bg-primary/20 border-primary text-primary' : 'bg-slate-950 border-white/5 text-muted-foreground'}`}
+                      >
+                        {level}
                       </button>
                     ))}
                  </div>
