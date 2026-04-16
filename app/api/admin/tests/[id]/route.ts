@@ -78,7 +78,7 @@ export async function PUT(
           data: {
             text: q.text,
             type: q.type,
-            imageUrl: q.imageUrl,
+            images: q.images || [],
             options: q.options,
             correctAnswer: q.correctAnswer
           }
@@ -91,7 +91,7 @@ export async function PUT(
           data: incomingQuestionsWithoutId.map((q: any) => ({
             text: q.text,
             type: q.type,
-            imageUrl: q.imageUrl,
+            images: q.images || [],
             options: q.options,
             correctAnswer: q.correctAnswer,
             testId: id

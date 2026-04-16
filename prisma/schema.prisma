@@ -32,7 +32,7 @@ model Question {
   id            String       @id @default(cuid())
   text          String
   type          QuestionType
-  imageUrl      String?
+  images        String[]
   options       String[]     // MCQ uchun: ["A", "B", "C", "D"]
   correctAnswer String?      // MCQ uchun: "A", ochiq savol uchun ixtiyoriy
   testId        String

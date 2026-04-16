@@ -24,7 +24,7 @@ export default function NewTestPage() {
     level: "1-etap",
     timeLimit: 30,
     questions: [
-      { text: "", type: "MCQ", imageUrl: "", options: ["", "", "", ""], correctAnswer: "A" }
+      { text: "", type: "MCQ", images: [] as string[], options: ["", "", "", ""], correctAnswer: "A" }
     ]
   })
 
@@ -37,14 +37,14 @@ export default function NewTestPage() {
 
   const addQuestionAt = (idx: number) => {
     const newQuestions = [...newTest.questions]
-    newQuestions.splice(idx + 1, 0, { text: "", type: "MCQ", imageUrl: "", options: ["", "", "", ""], correctAnswer: "A" })
+    newQuestions.splice(idx + 1, 0, { text: "", type: "MCQ", images: [], options: ["", "", "", ""], correctAnswer: "A" })
     setNewTest({ ...newTest, questions: newQuestions })
   }
 
   const addQuestionFirst = () => {
     setNewTest({
       ...newTest,
-      questions: [{ text: "", type: "MCQ", imageUrl: "", options: ["", "", "", ""], correctAnswer: "A" }, ...newTest.questions]
+      questions: [{ text: "", type: "MCQ", images: [], options: ["", "", "", ""], correctAnswer: "A" }, ...newTest.questions]
     })
   }
 
@@ -77,13 +77,22 @@ export default function NewTestPage() {
           }),
         })
         const data = await res.json()
-        if (data.url) updateQuestion(idx, { imageUrl: data.url })
+        if (data.url) {
+          const currentQuestion = newTest.questions[idx]
+          updateQuestion(idx, { images: [...(currentQuestion.images || []), data.url] })
+        }
       } catch (err) {
         toast.error("Rasm yuklashda xatolik yuz berdi!")
       } finally {
         setUploadingIdx(null)
       }
     }
+  }
+
+  const removeImage = (qIdx: number, imgIdx: number) => {
+    const q = newTest.questions[qIdx]
+    const newImages = q.images.filter((_: any, i: number) => i !== imgIdx)
+    updateQuestion(qIdx, { images: newImages })
   }
 
   const handleCreateTest = async () => {
@@ -115,7 +124,7 @@ export default function NewTestPage() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-full mx-auto space-y-8 pb-20">
-        {/* Header */}
+        {/* Header content unchanged... */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/50 p-6 rounded-lg border border-white/5">
           <div className="flex items-center gap-4">
             <button onClick={() => router.back()} className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center hover:bg-white/10 transition-all border border-white/5">
@@ -136,7 +145,7 @@ export default function NewTestPage() {
           </button>
         </div>
 
-        {/* Basic Info Section */}
+        {/* Basic Info Section unchanged... */}
         <div className="bg-slate-900/40 p-8 rounded-lg border border-white/5 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2 space-y-4">
             <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Test Sarlavhasi</label>
@@ -214,7 +223,6 @@ export default function NewTestPage() {
                 placeholder="30"
               />
             </div>
-            <p className="text-[10px] text-muted-foreground italic">Vaqt tugaganda test avtomatik saqlanadi.</p>
           </div>
         </div>
 
@@ -246,7 +254,7 @@ export default function NewTestPage() {
 
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                      <div className="lg:col-span-8 space-y-4">
+                      <div className="lg:col-span-12 space-y-4">
                         <textarea 
                           placeholder="Savol matnini bu yerga yozing..."
                           value={q.text}
@@ -270,31 +278,29 @@ export default function NewTestPage() {
                             </div>
                           </div>
 
-                          {!q.imageUrl ? (
-                            <div className="relative">
-                              <input type="file" accept="image/*" onChange={(e) => e.target.files && handleImageUpload(qIdx, e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                              <div className="px-4 py-2 bg-white/5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border border-white/5 hover:bg-white/10 transition-all">
-                                {uploadingIdx === qIdx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
-                                Rasm yuklash
-                              </div>
+                          <div className="relative">
+                            <input type="file" accept="image/*" onChange={(e) => e.target.files && handleImageUpload(qIdx, e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                            <div className="px-4 py-2 bg-white/5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 border border-white/5 hover:bg-white/10 transition-all font-outfit">
+                              {uploadingIdx === qIdx ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+                              Rasm qo'shish
                             </div>
-                          ) : (
-                             <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                                <CheckCircle2 className="w-3 h-3" /> Rasm bor
-                                <button onClick={() => updateQuestion(qIdx, { imageUrl: "" })} className="ml-2 hover:text-white">&times;</button>
-                              </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="lg:col-span-4">
-                        {q.imageUrl ? (
-                          <div className="relative group aspect-square lg:aspect-auto h-full min-h-[160px] bg-slate-950 rounded-lg overflow-hidden border border-white/5">
-                             <img src={q.imageUrl} alt="Savol" className="w-full h-full object-cover opacity-80" />
                           </div>
-                        ) : (
-                          <div className="h-full min-h-[160px] bg-slate-950 rounded-lg border border-dashed border-white/5 flex flex-col items-center justify-center text-slate-800 text-[10px] font-black uppercase tracking-widest">
-                             Rasm yo'q
+                        </div>
+
+                        {/* Image Grid Display */}
+                        {q.images && q.images.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-4 bg-slate-950 rounded-lg border border-white/5">
+                            {q.images.map((url: string, imgIdx: number) => (
+                              <div key={imgIdx} className="relative group aspect-square rounded-lg overflow-hidden border border-white/10 bg-slate-900">
+                                <img src={url} alt={`Savol ${qIdx + 1} rasm ${imgIdx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                <button 
+                                  onClick={() => removeImage(qIdx, imgIdx)}
+                                  className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>

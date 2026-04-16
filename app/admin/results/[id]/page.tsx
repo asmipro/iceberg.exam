@@ -147,9 +147,18 @@ export default function SubmissionDetailPage() {
                     </div>
                   </div>
 
-                  {q.imageUrl && (
-                    <div className="max-w-sm rounded-lg overflow-hidden border border-white/5">
-                      <img src={q.imageUrl} alt="Savol" className="w-full h-auto" />
+                  {/* Multiple Images Support */}
+                  {q.images && q.images.length > 0 && (
+                    <div className={`grid gap-3 ${
+                      q.images.length === 1 ? 'max-w-md grid-cols-1' : 
+                      q.images.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
+                      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                    }`}>
+                      {q.images.map((img: string, i: number) => (
+                        <div key={i} className="rounded-lg overflow-hidden border border-white/5 bg-slate-950/50 shadow-lg group">
+                           <img src={img} alt={`Savol rasmi ${i+1}`} className="w-full h-auto object-contain max-h-[300px]" />
+                        </div>
+                      ))}
                     </div>
                   )}
 

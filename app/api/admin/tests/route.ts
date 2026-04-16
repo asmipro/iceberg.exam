@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
           create: questions.map((q: any) => ({
             text: q.text,
             type: q.type as "MCQ" | "OPEN",
-            imageUrl: q.imageUrl,
+            images: q.images || [],
             options: q.options,
             correctAnswer: q.correctAnswer,
           })),

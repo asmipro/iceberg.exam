@@ -33,6 +33,7 @@ function TestContent() {
   const [hasStarted, setHasStarted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isExitModalOpen, setIsExitModalOpen] = useState(false)
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
   
   const MAX_TAB_SWITCHES = 3
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -339,6 +340,25 @@ function TestContent() {
 
   return (
     <div className={`min-h-screen bg-background select-none transition-all duration-300 ${isBlurred ? 'blur-2xl' : ''}`}>
+      {/* Enlarged Image Modal */}
+      <AnimatePresence>
+        {enlargedImage && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEnlargedImage(null)}
+            className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out"
+          >
+             <motion.img 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              src={enlargedImage} 
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Blurred Overlay */}
       <AnimatePresence>
         {isBlurred && (
@@ -411,9 +431,26 @@ function TestContent() {
                    <h1 className="text-lg md:text-2xl font-black font-outfit leading-tight text-slate-200">{currentQuestion.text}</h1>
                 </div>
 
-                {currentQuestion.imageUrl && (
-                  <div className="mb-10 rounded-2xl overflow-hidden border border-white/5 max-w-2xl mx-auto shadow-2xl">
-                     <img src={currentQuestion.imageUrl} alt="Savol rasmi" className="w-full h-auto" />
+                {/* Multiple Images Support */}
+                {currentQuestion.images && currentQuestion.images.length > 0 && (
+                  <div className={`mb-10 grid gap-4 ${
+                    currentQuestion.images.length === 1 ? 'grid-cols-1' : 
+                    currentQuestion.images.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
+                    'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                  }`}>
+                    {currentQuestion.images.map((img: string, i: number) => (
+                      <motion.div 
+                        key={i}
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => setEnlargedImage(img)}
+                        className="relative rounded-2xl overflow-hidden border border-white/5 bg-slate-950/50 shadow-xl cursor-zoom-in group"
+                      >
+                         <img src={img} alt={`Savol rasmi ${i+1}`} className="w-full h-auto object-contain max-h-[400px]" />
+                         <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors flex items-center justify-center">
+                            <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                         </div>
+                      </motion.div>
+                    ))}
                   </div>
                 )}
 
