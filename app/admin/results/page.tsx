@@ -26,6 +26,7 @@ export default function ResultsPage() {
   const [filter, setFilter] = useState("STUDENT")
   const [selectedLevel, setSelectedLevel] = useState("ALL")
   const [search, setSearch] = useState("")
+  const [selectedDate, setSelectedDate] = useState("")
   
   // Selection & Deletion State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -64,7 +65,12 @@ export default function ResultsPage() {
     const searchMatch = (s.firstName?.toLowerCase() || "").includes(search.toLowerCase()) || 
                        (s.lastName?.toLowerCase() || "").includes(search.toLowerCase())
     const levelMatch = selectedLevel === "ALL" || s.level === selectedLevel
-    return s.role === filter && searchMatch && levelMatch
+    
+    // Date filter logic
+    const submissionDate = new Date(s.createdAt).toISOString().split('T')[0]
+    const dateMatch = !selectedDate || submissionDate === selectedDate
+    
+    return s.role === filter && searchMatch && levelMatch && dateMatch
   })
 
   const toggleSelect = (id: string) => {
@@ -124,7 +130,7 @@ export default function ResultsPage() {
   }
 
   const handleExport = () => {
-    exportSubmissionsToExcel(filteredSubmissions, filter, selectedLevel)
+    exportSubmissionsToExcel(filteredSubmissions, filter, selectedLevel, selectedDate)
   }
 
   return (
@@ -191,6 +197,25 @@ export default function ResultsPage() {
             ))
           )}
         </select>
+
+        {/* Date Filter */}
+        <div className="relative group min-w-[180px]">
+          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-hover:text-primary transition-colors pointer-events-none" />
+          <input 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => { setSelectedDate(e.target.value); setSelectedIds([]); }}
+            className="w-full bg-slate-950 border border-white/5 rounded-lg py-2.5 pl-12 pr-10 text-sm font-bold focus:border-primary outline-none text-white/80 transition-all [color-scheme:dark]"
+          />
+          {selectedDate && (
+            <button 
+              onClick={() => setSelectedDate("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-md transition-all text-slate-500 hover:text-rose-500"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         
         <div className="relative flex-grow">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

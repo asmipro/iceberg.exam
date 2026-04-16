@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 
-export async function exportSubmissionsToExcel(submissions: any[], role: string, level: string = "Barcha") {
+export async function exportSubmissionsToExcel(submissions: any[], role: string, level: string = "Barcha", selectedDate?: string) {
   const workbook = new ExcelJS.Workbook()
   const worksheet = workbook.addWorksheet('Natijalar')
 
@@ -116,7 +116,7 @@ export async function exportSubmissionsToExcel(submissions: any[], role: string,
   
   const safeRole = role.replace(/[^a-z0-9]/gi, '_')
   const safeLevel = level.replace(/[^a-z0-9]/gi, '_')
-  const dateStr = new Date().toISOString().split('T')[0]
+  const dateStr = selectedDate || new Date().toISOString().split('T')[0]
   const fileName = `Natijalar_${safeRole}_${safeLevel}_${dateStr}.xlsx`
 
   const link = document.createElement('a')

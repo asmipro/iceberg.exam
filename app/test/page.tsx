@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   CheckCircle2, ChevronRight, ChevronLeft, Loader2, 
-  Clock, Award, LogOut, AlertTriangle, Maximize2 
+  Clock, Award, LogOut, AlertTriangle, Maximize2, X
 } from "lucide-react"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
@@ -345,15 +345,28 @@ function TestContent() {
         {enlargedImage && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setEnlargedImage(null)}
-            className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out"
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 md:p-12"
           >
+             {/* Close Button */}
+             <button 
+                onClick={(e) => { e.stopPropagation(); setEnlargedImage(null); }}
+                className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all z-[1001] border border-white/10"
+             >
+                <X className="w-6 h-6" />
+             </button>
+
+             {/* Background overlay for closing */}
+             <div 
+               onClick={() => setEnlargedImage(null)}
+               className="absolute inset-0 z-0 cursor-zoom-out"
+             />
+
              <motion.img 
               initial={{ scale: 0.9, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.9, opacity: 0 }}
               src={enlargedImage} 
-              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+              className="relative z-10 max-w-full max-h-full object-contain rounded-xl shadow-2xl pointer-events-none"
              />
           </motion.div>
         )}
