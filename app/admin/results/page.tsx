@@ -27,6 +27,8 @@ export default function ResultsPage() {
   const [selectedLevel, setSelectedLevel] = useState("ALL")
   const [search, setSearch] = useState("")
   const [selectedDate, setSelectedDate] = useState("")
+  const [allTests, setAllTests] = useState<any[]>([])
+  const [selectedTestId, setSelectedTestId] = useState("ALL")
   
   // Selection & Deletion State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -40,6 +42,28 @@ export default function ResultsPage() {
   useEffect(() => {
     fetchResults()
   }, [])
+
+  useEffect(() => {
+    fetchTests()
+  }, [filter, selectedLevel])
+
+  const fetchTests = async () => {
+    if (selectedLevel === "ALL") {
+      setAllTests([])
+      setSelectedTestId("ALL")
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/tests?role=${filter}&level=${selectedLevel}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setAllTests(data)
+      }
+    } catch (err) {
+      console.error("Fetch tests error:", err)
+    }
+  }
 
   const fetchResults = async () => {
     try {
@@ -70,7 +94,10 @@ export default function ResultsPage() {
     const submissionDate = new Date(s.createdAt).toISOString().split('T')[0]
     const dateMatch = !selectedDate || submissionDate === selectedDate
     
-    return s.role === filter && searchMatch && levelMatch && dateMatch
+    // Test filter logic
+    const testMatch = selectedTestId === "ALL" || s.testId === selectedTestId
+    
+    return s.role === filter && searchMatch && levelMatch && dateMatch && testMatch
   })
 
   const toggleSelect = (id: string) => {
@@ -181,22 +208,37 @@ export default function ResultsPage() {
           </button>
         </div>
 
-        <select 
-          value={selectedLevel}
-          onChange={(e) => { setSelectedLevel(e.target.value); setSelectedIds([]); }}
-          className="bg-slate-950 border border-white/5 rounded-lg py-2.5 px-4 text-sm font-bold focus:border-primary outline-none text-white/80"
-        >
-          <option value="ALL">Barcha {filter === "STUDENT" ? "Etaplar" : "Darajalar"}</option>
-          {filter === "STUDENT" ? (
-            [1, 2, 3, 4, 5, 6].map(num => (
-              <option key={num} value={`${num}-etap`}>{num}-etap</option>
-            ))
-          ) : (
-            TEACHER_LEVELS.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))
+        <div className="flex flex-wrap gap-4 items-center">
+          <select 
+            value={selectedLevel}
+            onChange={(e) => { setSelectedLevel(e.target.value); setSelectedTestId("ALL"); setSelectedIds([]); }}
+            className="bg-slate-950 border border-white/5 rounded-lg py-2.5 px-4 text-sm font-bold focus:border-primary outline-none text-white/80"
+          >
+            <option value="ALL">Barcha {filter === "STUDENT" ? "Etaplar" : "Darajalar"}</option>
+            {filter === "STUDENT" ? (
+              [1, 2, 3, 4, 5, 6].map(num => (
+                <option key={num} value={`${num}-etap`}>{num}-etap</option>
+              ))
+            ) : (
+              TEACHER_LEVELS.map(level => (
+                <option key={level} value={level}>{level}</option>
+              ))
+            )}
+          </select>
+
+          {selectedLevel !== "ALL" && (
+            <select 
+              value={selectedTestId}
+              onChange={(e) => { setSelectedTestId(e.target.value); setSelectedIds([]); }}
+              className="bg-slate-950 border border-white/5 rounded-lg py-2.5 px-4 text-sm font-bold focus:border-primary outline-none text-white/80 animate-in fade-in slide-in-from-left-2"
+            >
+              <option value="ALL">Barcha Testlar</option>
+              {allTests.map(t => (
+                <option key={t.id} value={t.id}>{t.title}</option>
+              ))}
+            </select>
           )}
-        </select>
+        </div>
 
         {/* Date Filter */}
         <div className="relative group min-w-[180px]">

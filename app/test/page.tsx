@@ -18,6 +18,7 @@ function TestContent() {
   const role = searchParams.get("role")
   const level = searchParams.get("level")
 
+  const [availableTests, setAvailableTests] = useState<any[]>([])
   const [test, setTest] = useState<any>(null)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<any[]>([])
@@ -83,10 +84,8 @@ function TestContent() {
       }
     }
 
-    const handleContextMenu = (e: MouseEvent) => e.preventDefault()
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'u' || e.key === 's')) ||
         e.key === 'F12' ||
         (e.ctrlKey && e.shiftKey && e.key === 'I')
       ) {
@@ -97,14 +96,12 @@ function TestContent() {
     window.addEventListener('blur', handleBlur)
     window.addEventListener('focus', handleFocus)
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('contextmenu', handleContextMenu)
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('contextmenu', handleContextMenu)
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [hasStarted, isFinished])
@@ -133,18 +130,21 @@ function TestContent() {
     try {
       const res = await fetch(`/api/tests?role=${role}&level=${level}`)
       const data = await res.json()
-      if (data && data.length > 0) {
-        const foundTest = data[0]
-        setTest(foundTest)
-        testRef.current = foundTest
-        if (foundTest.timeLimit) {
-          setTimeLeft(foundTest.timeLimit * 60)
-        }
+      if (data && Array.isArray(data)) {
+        setAvailableTests(data)
       }
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const selectTest = (selected: any) => {
+    setTest(selected)
+    testRef.current = selected
+    if (selected.timeLimit) {
+      setTimeLeft(selected.timeLimit * 60)
     }
   }
 
@@ -254,20 +254,114 @@ function TestContent() {
     </div>
   )
 
-  if (!test && !loading) return <div className="p-10 text-center">Test topilmadi</div>
+  // 1. Selection State: If no test is selected yet
+  if (!test && !loading && !isFinished) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+        <div className="max-w-4xl w-full space-y-10">
+          <div className="text-center space-y-4">
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center mb-6"
+            >
+              <img src="/Frame 344.png" alt="ICE Logo" className="h-12 w-auto" />
+            </motion.div>
+            <motion.h1 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-4xl font-black font-outfit uppercase tracking-tight"
+            >
+              Testni Tanlang
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em]"
+            >
+              Darajangizga mos mavjud barcha testlar ro'yxati
+            </motion.p>
+          </div>
 
-  if (!hasStarted && !isFinished) {
+          {availableTests.length === 0 ? (
+            <div className="bg-slate-900/40 p-12 rounded-3xl border border-dashed border-white/10 text-center">
+              <AlertTriangle className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+              <p className="text-slate-500 font-bold">Hozircha ushbu daraja uchun testlar mavjud emas.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {availableTests.map((t, idx) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-slate-900/40 p-6 md:p-8 rounded-3xl border border-white/5 hover:border-primary/30 transition-all cursor-pointer group flex flex-col justify-between"
+                  onClick={() => selectTest(t)}
+                >
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-start">
+                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 text-primary">
+                        <Award className="w-6 h-6" />
+                      </div>
+                      <span className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-widest border border-white/5">
+                        {t.questions.length} savol
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black font-outfit text-white group-hover:text-primary transition-colors">{t.title}</h3>
+                      <p className="text-slate-500 text-xs mt-2 line-clamp-2">Ushbu test bilan o'z bilimingizni sinab ko'ring va natijangizni oshiring.</p>
+                    </div>
+                  </div>
+                  <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-6">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm font-bold">{t.timeLimit || "Cheksiz"} daqiqa</span>
+                    </div>
+                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center pt-8">
+            <button 
+              onClick={() => router.push("/")}
+              className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 hover:text-white transition-colors"
+            >
+              ← Bosh sahifaga qaytish
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 2. Rules State: If a test is selected but not yet started
+  if (test && !hasStarted && !isFinished) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
          <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-slate-900/40 p-8 md:p-12 rounded-2xl border border-white/5 max-w-2xl w-full text-center space-y-8"
+          className="bg-slate-900/40 p-8 md:p-12 rounded-3xl border border-white/5 max-w-2xl w-full text-center space-y-8 relative overflow-hidden"
          >
+           <button 
+             onClick={() => setTest(null)}
+             className="absolute top-6 left-6 p-2 text-slate-500 hover:text-white transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+           >
+             <ChevronLeft className="w-4 h-4" /> Orqaga
+           </button>
+
            <div className="flex flex-col items-center gap-6">
               <img src="/Frame 344.png" alt="ICE Logo" className="h-12 w-auto" />
-              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border border-primary/20">
-                 <Clock className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20">
+                 <Clock className="w-8 h-8 text-emerald-500" />
               </div>
            </div>
            <div>
