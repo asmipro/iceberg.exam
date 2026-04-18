@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Trash2, Image as ImageIcon, CheckCircle2, ChevronLeft, Loader2, Clock } from "lucide-react"
+import { Plus, Trash2, Image as ImageIcon, CheckCircle2, ChevronLeft, Loader2, Clock, FileUp } from "lucide-react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
+import * as XLSX from "xlsx"
 
 const TEACHER_LEVELS = [
   "Support teacher",
@@ -17,6 +18,7 @@ export default function NewTestPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [newTest, setNewTest] = useState({
     title: "",
@@ -93,6 +95,69 @@ export default function NewTestPage() {
     const q = newTest.questions[qIdx]
     const newImages = q.images.filter((_: any, i: number) => i !== imgIdx)
     updateQuestion(qIdx, { images: newImages })
+  }
+
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const bstream = evt.target?.result
+        const wb = XLSX.read(bstream, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 })
+
+        // Skip header row
+        const rows = data.slice(1)
+        const importedQuestions = rows
+          .filter(row => row[1]) // Filter out empty rows (check Question Text)
+          .map(row => {
+            const type = String(row[2] || "MCQ").toUpperCase() === "OPEN" ? "OPEN" : "MCQ"
+            const options = [
+              String(row[3] || ""),
+              String(row[4] || ""),
+              String(row[5] || ""),
+              String(row[6] || "")
+            ]
+            let correctAnswer = String(row[7] || "A").trim().toUpperCase()
+            
+            // If OPEN type, the correct answer is the whole string
+            if (type === "OPEN") {
+              correctAnswer = String(row[7] || "")
+            } else if (!["A", "B", "C", "D"].includes(correctAnswer)) {
+              correctAnswer = "A" // Fallback for MCQ
+            }
+
+            return {
+              text: String(row[1] || ""),
+              type,
+              options,
+              correctAnswer,
+              images: []
+            }
+          })
+
+        if (importedQuestions.length === 0) {
+          toast.error("Faylda savollar topilmadi!")
+          return
+        }
+
+        setNewTest(prev => ({
+          ...prev,
+          questions: [...prev.questions.filter(q => q.text.trim() !== ""), ...importedQuestions]
+        }))
+        
+        toast.success(`${importedQuestions.length} ta savol muvaffaqiyatli yuklandi`)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      } catch (err) {
+        console.error(err)
+        toast.error("Faylni o'qishda xatolik yuz berdi!")
+      }
+    }
+    reader.readAsBinaryString(file)
   }
 
   const handleCreateTest = async () => {
@@ -230,9 +295,25 @@ export default function NewTestPage() {
         <div className="space-y-6">
           <div className="flex justify-between items-center px-2">
             <h2 className="text-xl font-black font-outfit uppercase tracking-widest">Savollar ({newTest.questions.length})</h2>
-            <button onClick={addQuestionFirst} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline transition-all">
-              + Teppaga savol qo'shish
-            </button>
+            <div className="flex gap-4 items-center">
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleExcelImport}
+                accept=".xlsx, .csv" 
+                className="hidden" 
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500/20 transition-all"
+              >
+                <FileUp className="w-3.5 h-3.5" />
+                Exceldan yuklash
+              </button>
+              <button onClick={addQuestionFirst} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline transition-all">
+                + Teppaga savol qo'shish
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
